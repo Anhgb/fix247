@@ -13,7 +13,7 @@ async def get_redis() -> Redis:
     global _redis
     if _redis is None:
         settings = get_settings()
-        _redis = from_url(settings.redis_url, decode_responses=True)
+        _redis = from_url(settings.redis_url, decode_responses=True, protocol=2)
     return _redis
 
 

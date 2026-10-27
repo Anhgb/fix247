@@ -20,8 +20,11 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Enable PostGIS extension
-    op.execute("CREATE EXTENSION IF NOT EXISTS postgis")
+    # Enable extensions conditionally
+    bind = op.get_bind()
+    has_postgis = bind.execute(sa.text("SELECT count(*) FROM pg_available_extensions WHERE name = 'postgis'")).scalar()
+    if has_postgis and has_postgis > 0:
+        op.execute("CREATE EXTENSION IF NOT EXISTS postgis")
     op.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")
 
     # ── users ──────────────────────────────────────────────────────────────────
@@ -185,26 +188,17 @@ def upgrade() -> None:
             "updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
         ),
     )
-    # Add PostGIS geography column separately
-    op.execute(
-        """
-        ALTER TABLE technician_profiles
-        DROP COLUMN IF EXISTS location;
-        """
-    )
-    op.execute(
-        """
-        ALTER TABLE technician_profiles
-        ADD COLUMN location geography(POINT, 4326);
-        """
-    )
-    # GIST index on location (SRS §8)
-    op.execute(
-        """
-        CREATE INDEX ix_tech_profile_location_gist
-        ON technician_profiles USING GIST (location);
-        """
-    )
+    # Add location column (PostGIS geography if extension available, else VARCHAR)
+    bind = op.get_bind()
+    has_postgis = bind.execute(sa.text("SELECT count(*) FROM pg_available_extensions WHERE name = 'postgis'")).scalar()
+    if has_postgis and has_postgis > 0:
+        op.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
+        op.execute("ALTER TABLE technician_profiles DROP COLUMN IF EXISTS location;")
+        op.execute("ALTER TABLE technician_profiles ADD COLUMN location geography(POINT, 4326);")
+        op.execute("CREATE INDEX ix_tech_profile_location_gist ON technician_profiles USING GIST (location);")
+    else:
+        op.execute("ALTER TABLE technician_profiles DROP COLUMN IF EXISTS location;")
+        op.execute("ALTER TABLE technician_profiles ADD COLUMN location VARCHAR(100);")
 
     # ── assets ────────────────────────────────────────────────────────────────
     op.create_table(
@@ -261,9 +255,16 @@ def upgrade() -> None:
         sa.Column("ai_provider", sa.String(50), nullable=True),
         sa.Column("confidence_max", sa.Numeric(4, 3), nullable=True),
         sa.Column("has_safety_warnings", sa.Boolean, nullable=False, server_default="false"),
-        sa.Column("verified_label", sa.String(20), nullable=True),
+        sa.Column(
+            "verified_label",
+            sa.Enum("correct", "incorrect", "partial", name="verifiedlabel"),
+            nullable=True,
+        ),
         sa.Column("verified_by_id", sa.String(36), sa.ForeignKey("users.id"), nullable=True),
         sa.Column("verified_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("customer_helpful", sa.Boolean, nullable=True),
+        sa.Column("customer_feedback_notes", sa.Text, nullable=True),
+        sa.Column("customer_feedback", sa.JSON, nullable=True),
         sa.Column(
             "qr_location_id",
             sa.String(36),

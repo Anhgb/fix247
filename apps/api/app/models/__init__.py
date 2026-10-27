@@ -88,6 +88,12 @@ class PaymentStatus(str, enum.Enum):
     pending = "pending"
     completed = "completed"
     failed = "failed"
+
+
+class VerifiedLabel(str, enum.Enum):
+    correct = "correct"
+    incorrect = "incorrect"
+    partial = "partial"
     refunded = "refunded"
 
 
@@ -329,9 +335,14 @@ class Diagnosis(TimestampMixin, Base):
     has_safety_warnings = Column(Boolean, nullable=False, default=False)
 
     # After repair: tech labels accuracy (FR-DIAG-09)
-    verified_label = Column(String(20), nullable=True)  # "correct" | "partial" | "wrong"
+    verified_label = Column(Enum(VerifiedLabel, name="verifiedlabel"), nullable=True)
     verified_by_id = Column(UUID(as_uuid=False), ForeignKey("users.id"), nullable=True)
     verified_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Customer helpful/unhelpful feedback
+    customer_helpful = Column(Boolean, nullable=True)
+    customer_feedback_notes = Column(Text, nullable=True)
+    customer_feedback = Column(JSON, nullable=True)
 
     # QR location context
     qr_location_id = Column(UUID(as_uuid=False), ForeignKey("qr_locations.id"), nullable=True)

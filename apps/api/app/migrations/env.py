@@ -13,10 +13,13 @@ from app.models import Base  # noqa: F401
 
 config = context.config
 
-# Allow DATABASE_URL_SYNC from environment to override alembic.ini
-db_url = os.environ.get("DATABASE_URL_SYNC")
-if db_url:
-    config.set_main_option("sqlalchemy.url", db_url)
+from app.core.config import get_settings
+
+try:
+    settings = get_settings()
+    config.set_main_option("sqlalchemy.url", settings.database_url_sync)
+except Exception:
+    pass
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
