@@ -15,6 +15,8 @@ import {
   ArrowRight,
   UserCheck,
   CheckCircle2,
+  Bike,
+  Tv,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -324,6 +326,45 @@ export default function HomePage() {
             <span>ĐẶT LỊCH SỬA TẠI NHÀ</span>
           </Button>
         </div>
+      </section>
+
+      {/* P4 Quick Access: Digital Health Log & Technician Portal */}
+      <section className="grid grid-cols-2 gap-3">
+        <Link href="/assets" className="block group">
+          <Card interactive className="p-3.5 h-full bg-surface-card border-surface-border group-hover:border-brand-500/60 transition">
+            <div className="space-y-2">
+              <div className="w-10 h-10 rounded-xl bg-sky-950/60 text-sky-400 border border-sky-500/30 flex items-center justify-center">
+                <Bike className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-white group-hover:text-brand-300 transition">
+                  S? S?c Kh?e
+                </h4>
+                <p className="text-[11px] text-slate-400 leading-snug mt-0.5">
+                  Nh?t k� b?o du?ng & nh?c l?ch t? d?ng
+                </p>
+              </div>
+            </div>
+          </Card>
+        </Link>
+
+        <Link href="/tech/dashboard" className="block group">
+          <Card interactive className="p-3.5 h-full bg-surface-card border-surface-border group-hover:border-emerald-500/60 transition">
+            <div className="space-y-2">
+              <div className="w-10 h-10 rounded-xl bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
+                <Wrench className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-white group-hover:text-emerald-300 transition">
+                  C?ng Cho Th?
+                </h4>
+                <p className="text-[11px] text-slate-400 leading-snug mt-0.5">
+                  Nh?n don, v� th? & h? so d?i t�c
+                </p>
+              </div>
+            </div>
+          </Card>
+        </Link>
       </section>
 
       {/* Popular Services & Standard Price Catalog */}

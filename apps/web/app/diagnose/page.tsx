@@ -17,13 +17,15 @@ import {
   Wrench,
   Clock,
   Layers,
+  Bike,
+  Tv,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
-import { diagnosisApi, DiagnosisData } from "@/lib/api";
+import { diagnosisApi, DiagnosisData, assetsApi, AssetResponse } from "@/lib/api";
 import { compressImage } from "@/lib/compression";
 
 function DiagnoseContent() {
@@ -34,6 +36,22 @@ function DiagnoseContent() {
   const initialGroup = (searchParams.get("group") as "motorbike" | "home") || "motorbike";
   const [categoryGroup, setCategoryGroup] = React.useState<"motorbike" | "home">(initialGroup);
   const [description, setDescription] = React.useState(searchParams.get("desc") || "");
+
+  // Digital Health Log Asset Picker (P4, FR-HEALTH-01)
+  const [userAssets, setUserAssets] = React.useState<AssetResponse[]>([]);
+  const [selectedAssetId, setSelectedAssetId] = React.useState<string>("");
+
+  React.useEffect(() => {
+    assetsApi.list().then(({ data }) => {
+      if (data) setUserAssets(data.items);
+    });
+  }, []);
+
+  // Filter assets matching current category
+  const filteredAssets = React.useMemo(() => {
+    const targetType = categoryGroup === "motorbike" ? "vehicle" : "appliance";
+    return userAssets.filter((a) => a.asset_type === targetType);
+  }, [userAssets, categoryGroup]);
 
   // Media files
   const [images, setImages] = React.useState<File[]>([]);
@@ -181,6 +199,9 @@ function DiagnoseContent() {
 
     const formData = new FormData();
     formData.append("category_group", categoryGroup);
+    if (selectedAssetId) {
+      formData.append("asset_id", selectedAssetId);
+    }
     if (description.trim()) {
       formData.append("description", description.trim());
     }
@@ -280,6 +301,46 @@ function DiagnoseContent() {
           <span>Điện Máy / Đồ Nhà</span>
         </button>
       </div>
+
+      {/* Asset Picker from Digital Health Log (FR-HEALTH-01) */}
+      {filteredAssets.length > 0 && (
+        <div className="p-3.5 bg-surface-card border border-surface-border rounded-2xl space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+              {categoryGroup === "motorbike" ? <Bike className="w-4 h-4 text-amber-400" /> : <Tv className="w-4 h-4 text-sky-400" />}
+              <span>Gắn với thiết bị trong Sổ Sức Khỏe (Tùy chọn):</span>
+            </label>
+            <Link
+              href="/assets"
+              className="text-[11px] text-brand-primary hover:text-brand-400 font-medium"
+            >
+              Quản lý ({userAssets.length}/10)
+            </Link>
+          </div>
+
+          <select
+            value={selectedAssetId}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSelectedAssetId(val);
+              if (val) {
+                const found = userAssets.find((a) => a.id === val);
+                if (found && !description) {
+                  setDescription(`Sự cố trên ${found.brand} ${found.model}${found.plate_or_serial ? ` (${found.plate_or_serial})` : ""}: `);
+                }
+              }
+            }}
+            className="w-full p-2.5 bg-surface-elevated border border-surface-border rounded-xl text-xs text-white focus:outline-none focus:border-brand-500"
+          >
+            <option value="">-- Không chọn (Nhập thiết bị mới) --</option>
+            {filteredAssets.map((asset) => (
+              <option key={asset.id} value={asset.id}>
+                {asset.brand} {asset.model} {asset.plate_or_serial ? `[${asset.plate_or_serial}]` : ""} {asset.location_label ? `(${asset.location_label})` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Low-confidence Clarifying Questions Form */}
       {followupQuestions.length > 0 && (

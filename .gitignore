@@ -51,3 +51,12 @@ test-results/
 
 # Media uploads
 media_uploads/
+
+# Build & Binary files
+*.tsbuildinfo
+*.exe
+
+# Infrastructure data
+infra/data/
+infra/minio_data/
+infra/pgsql/

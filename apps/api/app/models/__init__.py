@@ -638,3 +638,49 @@ class AdminActionLog(Base):
     __table_args__ = (
         Index("ix_admin_logs_admin_created", "admin_id", "created_at"),
     )
+
+
+class ChatMessage(Base):
+    """
+    FR-TRACK-03: In-order chat messages between customer and technician.
+    Phone numbers hidden/masked.
+    """
+    __tablename__ = "chat_messages"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=_uuid_default)
+    order_id = Column(UUID(as_uuid=False), ForeignKey("orders.id", ondelete="CASCADE"), nullable=False)
+    sender_id = Column(UUID(as_uuid=False), ForeignKey("users.id"), nullable=False)
+    sender_role = Column(String(20), nullable=False)
+    content = Column(Text, nullable=False)
+    media_url = Column(String(500), nullable=True)
+    is_phone_masked = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    order = relationship("Order")
+    sender = relationship("User")
+
+    __table_args__ = (
+        Index("ix_chat_messages_order_created", "order_id", "created_at"),
+    )
+
+
+class DispatchAttempt(Base):
+    """
+    FR-BOOK-01/02: Tracking dispatch invitations and acceptance rates.
+    """
+    __tablename__ = "dispatch_attempts"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=_uuid_default)
+    order_id = Column(UUID(as_uuid=False), ForeignKey("orders.id", ondelete="CASCADE"), nullable=False)
+    technician_id = Column(UUID(as_uuid=False), ForeignKey("users.id"), nullable=False)
+    invited_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    responded_at = Column(DateTime(timezone=True), nullable=True)
+    response = Column(String(20), nullable=False, default="expired")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    order = relationship("Order")
+    technician = relationship("User")
+
+    __table_args__ = (
+        Index("ix_dispatch_attempts_tech_created", "technician_id", "created_at"),
+    )

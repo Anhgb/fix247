@@ -70,3 +70,17 @@ class DiagnosisFeedbackRequest(BaseModel):
     verified_label: Literal["correct", "partial", "wrong"] | None = None
     feedback_text: str | None = None
     rating: int | None = Field(None, ge=1, le=5)
+
+
+class TechDiagnosisLabelRequest(BaseModel):
+    verified_label: Literal["correct", "partial", "incorrect"] = Field(..., description="Đánh giá của thợ: correct, partial, incorrect")
+    notes: str | None = Field(None, max_length=500, description="Ghi chú nhận xét của thợ")
+
+
+class DiagnosisAccuracyStats(BaseModel):
+    total_verified: int
+    correct_count: int
+    partial_count: int
+    incorrect_count: int
+    accuracy_percentage: float
+
